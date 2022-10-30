@@ -3,8 +3,9 @@ import pandas as pd
 import numpy as np
 import random
 
-def sort(file_path,group_size):
+def sort_v2(file_path,group_size):
     file = pd.read_excel(file_path)
+    group_size = int(group_size)
     df2 = file.drop(file[file["# Responses"] == 0.0].index)
 
     #sort as ["Name","Study line","Type"]
@@ -37,9 +38,9 @@ def sort(file_path,group_size):
     group_help = [] # just helping during the sort. store study line 
     all_group_type_sl = []  #all group type study line, store study line.
     group_type_sl = [] # singe group type study line
-    
-    limits = len(study_line_list) // group_size - 2 # limits for the group of same study line.
-    
+
+    limits = len(study_line_list) // group_size - 2 # limits for the group of same study line.  
+
     it_label = 0
     loe = range(len(type_list)) #left over elements
 
@@ -105,23 +106,36 @@ def sort(file_path,group_size):
     results_df['Group'] = results_df.reset_index().apply(lambda x: get_group(x['index']),axis=1)
 
     #assign random group to left over
+    n_left = results_df.query('Group==-1').shape[0]
+    randlist = random.sample(range(1,all_group_arr.shape[0]),n_left)
+
+    def assign_rand_group(arrLike):
+        if arrLike['Group'] == -1:
+            k = randlist[-1]
+            randlist.pop()
+        else:
+            k = arrLike['Group']
+        return k
+
     results_df['desc'] = results_df.apply(lambda x: 'left' if x['Group'] == -1 else '', axis=1) #set label for random students
-    results_df['Group'] = results_df.apply(lambda x: random.randint(1,group_size) if x['Group'] == -1 else x['Group'], axis=1)
-    
+    #results_df['Group'] = results_df.apply(lambda x: randlist[0] if x['Group'] == -1 else x['Group'], axis=1)
+    results_df['Group'] = results_df.apply(assign_rand_group, axis=1)
+
 
     #Summary Sheet
     Summary = pd.DataFrame({'Group':[i for i in range(1,results_df['Group'].max()+1)],'Group size':'=COUNTIF(Group!F:F,@Summary!A:A)'})
 
-    writer = pd.ExcelWriter('results_studyline.xlsx', engine='openpyxl')
+    writer = pd.ExcelWriter('results_sl.xlsx', engine='openpyxl')
     
     Summary.to_excel(writer, index=False,sheet_name = 'Summary')
     results_df.sort_values('Group').to_excel(writer, index=False, sheet_name='Group')
 
     writer.save()
     writer.close()
+    return 
 
 if __name__ == "__main__":
     file_path = sys.argv[1]
     group_size = int(sys.argv[2])
     
-    sort(file_path,group_size)
+    sort_v2(file_path,group_size)
