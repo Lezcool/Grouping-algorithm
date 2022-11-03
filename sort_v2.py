@@ -13,13 +13,14 @@ def sort_v2(file_path,group_size):
     new_row = None
     for row in range(df2.shape[0]):
         if pd.isnull(df2.iloc[row,0]):
-            new_row.append(df2.iloc[row,7])
+            new_row.append(df2.iloc[row,7])  # type
+
         else:
             if new_row != None:
                 New_list.append(new_row)
             new_row = [df2.iloc[row,0]]
-            
-    results_df = pd.DataFrame(New_list)
+
+    results_df = pd.DataFrame(New_list).iloc[:,:3]
     results_df.columns = ["Name","Study line","Type"]
 
     #adding studyline no and type no
